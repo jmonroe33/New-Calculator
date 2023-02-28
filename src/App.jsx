@@ -27,19 +27,73 @@ function reducer(state, { type, payload } ) {
       if(state.currentOperand == null && state.previousOperand == null) {
         return state 
       }
+      if(state.currentOperand == null) {
+        return {
+          ...state,
+          operation: payload.operation,
+        }
+      }
+
+      if(state.previousOperand == null) {
+       return {
+        ...state,
+        operation: payload.operation,
+        previousOperand: state.currentOperand,
+        currentOperand: null
+       }
+      }
+      return {
+        ...state,
+        operation: payload.operation,
+        previousOperand: evaluate(state),
+        currentOperand: null
+      }
     case ACTIONS.CLEAR:
         return {}
+    case ACTIONS.EVALUATE: 
+      if (
+        state.currentOperand == null || 
+        state.previousOperand == null || 
+        state.operation == null
+        ) {
+          return state
+        }
+        return {
+          ...state,
+          previousOperand: null,
+          operation: null,
+          currentOperand: evaluate(state)
+        }
   }
- 
-
 }
+
+function evaluate({ currentOperand, previousOperand, operation }) {
+  let current = parseFloat(currentOperand)
+  let prev = parseFloat(previousOperand)
+  if(isNaN(prev) || isNaN(current)) return ""
+  let computation = ""
+  if(operation == "+") {
+    computation = prev + current
+   }
+   if (operation == "-") {
+    computation = prev - current
+   }
+   if (operation == "/") {
+    computation = prev / current
+   }
+   if (operation == "*") {
+    computation = prev * current
+   }
+   return computation.toString()
+}
+
 function App() {
   const [{ currentOperand, previousOperand, operation } , dispatch] = useReducer(reducer, {})
     
   return (
     <div className="calculator-grid">
       <div className='output'>
-        <div className='previous-operand'>{previousOperand}</div>
+        <div className='previous-operand'>{previousOperand}{operation}</div>
         <div className='current-operand'>{currentOperand}</div>
       </div>
       <button className='span-two'onClick={() => dispatch({type:ACTIONS.CLEAR })}>AC</button>
@@ -59,7 +113,7 @@ function App() {
       <OperationButton operation="-" dispatch={dispatch}/>
       <DigitButton digit="." dispatch={dispatch}/>
       <DigitButton digit="0" dispatch={dispatch}/>
-      <button className='span-two'>=</button>
+      <button className='span-two'onClick={() => dispatch({ type:ACTIONS.EVALUATE })}>=</button>
     </div>
   )
 }
